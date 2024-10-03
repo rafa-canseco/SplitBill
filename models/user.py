@@ -1,8 +1,8 @@
-from datetime import datetime
-
 class User:
-    def __init__(self, name: str,address:str,  email:str):
+    def __init__(self, privy_id: str, name: str, email: str, walletAddress: str, is_profile_complete: bool = False):
         self.id = None
+        self.privy_id = privy_id
         self.name = name
-        self.address = address
         self.email = email
+        self.walletAddress = walletAddress
+        self.is_profile_complete = is_profile_complete

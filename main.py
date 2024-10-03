@@ -1,28 +1,71 @@
 from fastapi import FastAPI,HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 
 from .models.user import User
 from .models.session import Session
 from .models.expense import Expense
-from .services.user_service import create_user
+from .services.user_service import check_user_exists,get_user_by_privy_id,create_user,update_user
 from .services.session_service import create_session
 from .services.expense_service import create_expense,create_multiple_expenses
 from .services.session_balance_service import checkout_session
-from .schemas.user import UserCreate,userResponse
+from .schemas.user import UserCreate,UserResponse,UserUpdate
 from .schemas.session import SessionCreate,SessionResponse
 from .schemas.expense import ExpenseCreate,ExpenseResponse
-from typing import List
+from typing import List,Dict
 
 app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 @app.get("/")
 def read_root():
     return {"hello": "world"}
 
-@app.post("/create_user")
-def create_user_endpoint(user:UserCreate):
-    new_user = User(**user.dict())
-    created_user = create_user(new_user)
-    return created_user
+@app.get("/api/user/check/{privy_id}")
+def check_user_endpoint(privy_id: str) -> Dict[str, bool]:
+    is_registered = check_user_exists(privy_id)
+    return {"isRegistered": is_registered}
+    
+@app.get("/api/user/{privy_id}", response_model=UserResponse)
+def get_user_endpoint(privy_id: str):
+    try:
+        user = get_user_by_privy_id(privy_id)
+        return UserResponse(**user.__dict__)
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/user", response_model=UserResponse)
+async def create_user_endpoint(user_data: UserCreate) -> UserResponse:
+    try:
+        user = create_user(
+            privy_id=user_data.privy_id,
+            name=user_data.name,
+            email=user_data.email,
+            walletAddress=user_data.walletAddress
+        )
+        return user
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.put("/api/user/{privy_id}", response_model=UserResponse)
+def update_user_endpoint(privy_id: str, user_data: UserUpdate):
+    try:
+        updated_user = update_user(privy_id, user_data.dict(exclude_unset=True))
+        return UserResponse(**updated_user.__dict__)
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
     
 @app.post("/create_session", response_model=SessionResponse)
 def create_session_endpoint(session_data:SessionCreate):

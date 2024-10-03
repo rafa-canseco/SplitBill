@@ -15,7 +15,7 @@ def checkout_session(session_id: int) -> Dict:
                 raise ValueError(f"No se encontraron usuarios para la sesión {session_id}")
 
         user_ids = [user['user_id'] for user in users_response.data]
-        users_info = supabase.table("users").select("id,name,email,address").in_("id", user_ids).execute()
+        users_info = supabase.table("users").select("id,name,email,walletAddress").in_("id", user_ids).execute()
         users_info_dict = {user['id']: user for user in users_info.data}
 
         users_spent = {user['user_id']: Decimal(str(user['total_spent'])) for user in users_response.data}
@@ -36,8 +36,8 @@ def checkout_session(session_id: int) -> Dict:
             "session_id": session_id,
             "total_spent": float(total_spent),
             "fair_share": float(fair_share),
-            "payers": {str(k): {"amount": float(v), "name": users_info_dict[k]['name'], "email": users_info_dict[k]['email'], "address": users_info_dict[k]['address']} for k, v in payers.items()},
-            "receivers": {str(k): {"amount": float(v), "name": users_info_dict[k]['name'], "email": users_info_dict[k]['email'], "address": users_info_dict[k]['address']} for k, v in receivers.items()}
+            "payers": {str(k): {"amount": float(v), "name": users_info_dict[k]['name'], "email": users_info_dict[k]['email'], "walletAddress": users_info_dict[k]['walletAddress']} for k, v in payers.items()},
+            "receivers": {str(k): {"amount": float(v), "name": users_info_dict[k]['name'], "email": users_info_dict[k]['email'], "walletAddress": users_info_dict[k]['walletAddress']} for k, v in receivers.items()}
         }
 
     except Exception as e:

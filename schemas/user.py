@@ -1,13 +1,24 @@
 from pydantic import BaseModel
+from typing import Optional
 
 class UserCreate(BaseModel):
+    privy_id: str
     name: str
-    address: str
     email: str
-
+    walletAddress: str
     
-class userResponse(BaseModel):
+class UserUpdate(BaseModel):
+    name: Optional[str] = None
+    email: Optional[str] = None
+    walletAddress: Optional[str] = None
+
+class UserResponse(BaseModel):
     id: int
     name: str
     email: str
-    address: str
+    walletAddress: str
+    privy_id: str
+    is_profile_complete: bool
+    
+class UserCheck(BaseModel):
+    privy_id: str
