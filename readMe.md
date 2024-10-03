@@ -45,4 +45,3 @@ Bob sends $25 to the smart contract, which then sends $25 to Alice, resulting in
 
 - Backend: Python with FastAPI
 - Database: Supabase
-

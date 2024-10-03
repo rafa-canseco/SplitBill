@@ -1,5 +1,12 @@
 class User:
-    def __init__(self, privy_id: str, name: str, email: str, walletAddress: str, is_profile_complete: bool = False):
+    def __init__(
+        self,
+        privy_id: str,
+        name: str,
+        email: str,
+        walletAddress: str,
+        is_profile_complete: bool = False,
+    ):
         self.id = None
         self.privy_id = privy_id
         self.name = name

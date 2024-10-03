@@ -1,16 +1,16 @@
+from datetime import datetime
+
+from postgrest.exceptions import APIError
+
 from ..database.supabase_client import supabase
 from ..models.session import Session
-from postgrest.exceptions import APIError
-from datetime import datetime
 
 
 def create_session(session: Session, user_ids: list):
     try:
         session_data = session.to_dict()
         del session_data["id"]
-        session_response = (
-            supabase.table("sessions").insert(session_data).execute()
-        )
+        session_response = supabase.table("sessions").insert(session_data).execute()
 
         if not session_response.data:
             raise APIError({"message": "Failed to create session"})
@@ -29,9 +29,7 @@ def create_session(session: Session, user_ids: list):
         ]
 
         session_users_response = (
-            supabase.table("sessions_users")
-            .insert(session_users_data)
-            .execute()
+            supabase.table("sessions_users").insert(session_users_data).execute()
         )
 
         if not session_users_response.data:

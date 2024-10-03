@@ -1,12 +1,15 @@
-from pydantic import BaseModel
 from datetime import datetime
 from typing import List
+
+from pydantic import BaseModel
+
 
 class SessionCreate(BaseModel):
     state: str
     fiat: str
     qty_users: int
-    users_ids: List[int]
+    wallet_addresses: List[str]
+
 
 class SessionResponse(BaseModel):
     id: int

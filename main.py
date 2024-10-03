@@ -1,24 +1,23 @@
+from typing import Dict, List
+
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
-from .models.session import Session
 from .models.expense import Expense
-from .services.user_service import (
-    check_user_exists,
-    get_user_by_privy_id,
-    create_user,
-    update_user,
-)
-from .services.session_service import (
-    create_session,
-    get_sessions_by_wallet_address,
-)
+from .models.session import Session
+from .schemas.expense import ExpenseCreate, ExpenseResponse
+from .schemas.session import SessionCreate, SessionResponse
+from .schemas.user import UserCreate, UserResponse, UserUpdate
 from .services.expense_service import create_multiple_expenses
 from .services.session_balance_service import checkout_session
-from .schemas.user import UserCreate, UserResponse, UserUpdate
-from .schemas.session import SessionCreate, SessionResponse
-from .schemas.expense import ExpenseCreate, ExpenseResponse
-from typing import List, Dict
+from .services.session_service import create_session, get_sessions_by_wallet_address
+from .services.user_service import (
+    check_user_exists,
+    create_user,
+    get_or_create_users,
+    get_user_by_privy_id,
+    update_user,
+)
 
 app = FastAPI()
 
@@ -72,9 +71,7 @@ async def create_user_endpoint(user_data: UserCreate) -> UserResponse:
 @app.put("/api/user/{privy_id}", response_model=UserResponse)
 def update_user_endpoint(privy_id: str, user_data: UserUpdate):
     try:
-        updated_user = update_user(
-            privy_id, user_data.dict(exclude_unset=True)
-        )
+        updated_user = update_user(privy_id, user_data.dict(exclude_unset=True))
         return UserResponse(**updated_user.__dict__)
     except HTTPException as e:
         raise e
@@ -89,7 +86,8 @@ def create_session_endpoint(session_data: SessionCreate):
         fiat=session_data.fiat,
         qty_users=session_data.qty_users,
     )
-    created_session = create_session(new_session, session_data.users_ids)
+    user_ids = get_or_create_users(session_data.wallet_addresses)
+    created_session = create_session(new_session, user_ids)
 
     return SessionResponse(**created_session.to_dict())
 
@@ -100,16 +98,10 @@ def create_expense_endpoint(expenses_data: ExpenseCreate):
         created_expenses = create_multiple_expenses(
             expenses_data.session_id, expenses_data.expenses
         )
-        expense_objects = [
-            Expense.from_dict(expense) for expense in created_expenses
-        ]
-        return [
-            ExpenseResponse(**expense.to_dict()) for expense in expense_objects
-        ]
+        expense_objects = [Expense.from_dict(expense) for expense in created_expenses]
+        return [ExpenseResponse(**expense.to_dict()) for expense in expense_objects]
     except Exception as e:
-        raise HTTPException(
-            status_code=500, detail=f"An error occurred: {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"An error occurred: {str(e)}")
 
 
 @app.post("/sessions/{session_id}/checkout")
