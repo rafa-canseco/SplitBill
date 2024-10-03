@@ -9,3 +9,19 @@ repos:
     -   id: check-yaml
     -   id: check-added-large-files
         args: [— maxkb=1000]
+    -   id: check-merge-conflict
+    -   id: check-ast
+    -   id: double-quote-string-fixer
+    -   id: debug-statements
+    -   id: check-toml
+    -   id: check-json
+    -   id: check-xml
+-   repo: https://github.com/psf/black
+    rev: 23.12.1
+    hooks:
+    -   id: black
+        args: [--line-length=79]
+-   repo: https://github.com/PyCQA/flake8
+    rev: 7.0.0
+    hooks:
+    -   id: flake8
