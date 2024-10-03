@@ -1,6 +1,6 @@
 from typing import Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class UserCreate(BaseModel):
@@ -8,6 +8,7 @@ class UserCreate(BaseModel):
     name: str
     email: str
     walletAddress: str
+    is_invited: bool
 
 
 class UserUpdate(BaseModel):
@@ -18,11 +19,12 @@ class UserUpdate(BaseModel):
 
 class UserResponse(BaseModel):
     id: int
-    name: str
-    email: str
+    name: Optional[str] = None
+    email: Optional[str] = None
     walletAddress: str
-    privy_id: str
-    is_profile_complete: bool
+    privy_id: Optional[str] = None
+    is_profile_complete: bool = Field(default=False)
+    is_invited: bool = Field(default=False)
 
 
 class UserCheck(BaseModel):

@@ -6,6 +6,7 @@ class User:
         email: str,
         walletAddress: str,
         is_profile_complete: bool = False,
+        is_invited: bool = False,
     ):
         self.id = None
         self.privy_id = privy_id
@@ -13,3 +14,4 @@ class User:
         self.email = email
         self.walletAddress = walletAddress
         self.is_profile_complete = is_profile_complete
+        self.is_invited = is_invited

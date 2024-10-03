@@ -1,4 +1,4 @@
-from typing import Dict, List
+from typing import Dict, List, Optional, Union
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -12,7 +12,8 @@ from .services.expense_service import create_multiple_expenses
 from .services.session_balance_service import checkout_session
 from .services.session_service import create_session, get_sessions_by_wallet_address
 from .services.user_service import (
-    check_user_exists,
+    check_user_by_privy_id,
+    check_user_by_wallet,
     create_user,
     get_or_create_users,
     get_user_by_privy_id,
@@ -35,10 +36,28 @@ def read_root():
     return {"hello": "world"}
 
 
-@app.get("/api/user/check/{privy_id}")
-def check_user_endpoint(privy_id: str) -> Dict[str, bool]:
-    is_registered = check_user_exists(privy_id)
-    return {"isRegistered": is_registered}
+@app.get("/api/user/check")
+def check_user_endpoint(
+    privy_id: Optional[str] = None, wallet_address: Optional[str] = None
+) -> Dict[str, Union[bool, Optional[str]]]:
+    if not privy_id and not wallet_address:
+        raise HTTPException(
+            status_code=400, detail="Either privy_id or wallet_address must be provided"
+        )
+
+    user: Optional[UserResponse] = None
+    if privy_id:
+        user = check_user_by_privy_id(privy_id)
+    if not user and wallet_address:
+        user = check_user_by_wallet(wallet_address)
+
+    if user:
+        return {
+            "isRegistered": user.is_profile_complete,
+            "isInvited": user.is_invited,
+            "walletAddress": user.walletAddress,
+        }
+    return {"isRegistered": False, "isInvited": False, "walletAddress": None}
 
 
 @app.get("/api/user/{privy_id}", response_model=UserResponse)
@@ -60,6 +79,7 @@ async def create_user_endpoint(user_data: UserCreate) -> UserResponse:
             name=user_data.name,
             email=user_data.email,
             walletAddress=user_data.walletAddress,
+            is_invited=user_data.is_invited,
         )
         return user
     except HTTPException as e:
