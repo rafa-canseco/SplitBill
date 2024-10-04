@@ -10,6 +10,7 @@ class Participant(BaseModel):
 
 
 class SessionCreate(BaseModel):
+    id: int
     state: str
     fiat: str
     qty_users: int
@@ -23,3 +24,7 @@ class SessionResponse(BaseModel):
     fiat: str
     total_spent: float
     qty_users: int
+
+
+class JoinSessionRequest(BaseModel):
+    walletAddress: str

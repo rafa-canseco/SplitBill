@@ -6,11 +6,15 @@ from fastapi.middleware.cors import CORSMiddleware
 from .models.expense import Expense
 from .models.session import Session
 from .schemas.expense import ExpenseCreate, ExpenseResponse
-from .schemas.session import SessionCreate, SessionResponse
+from .schemas.session import JoinSessionRequest, SessionCreate, SessionResponse
 from .schemas.user import UserCreate, UserResponse, UserUpdate
 from .services.expense_service import create_multiple_expenses
 from .services.session_balance_service import checkout_session
-from .services.session_service import create_session, get_sessions_by_wallet_address
+from .services.session_service import (
+    create_session,
+    get_sessions_by_wallet_address,
+    join_session,
+)
 from .services.user_service import (
     check_user_by_privy_id,
     check_user_by_wallet,
@@ -101,6 +105,7 @@ def update_user_endpoint(privy_id: str, user_data: UserUpdate):
 @app.post("/create_session", response_model=SessionResponse)
 def create_session_endpoint(session_data: SessionCreate):
     new_session = Session(
+        id=session_data.id,
         state=session_data.state,
         fiat=session_data.fiat,
         qty_users=session_data.qty_users,
@@ -127,6 +132,17 @@ async def checkout_session_endpoint(session_id: int):
     try:
         result = checkout_session(session_id)
         return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/sessions/{session_id}/join")
+async def join_session_endpoint(session_id: int, join_request: JoinSessionRequest):
+    try:
+        result = join_session(session_id, join_request.walletAddress)
+        return {"message": "Successfully joined the session", "data": result}
+    except ValueError as ve:
+        raise HTTPException(status_code=400, detail=str(ve))
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

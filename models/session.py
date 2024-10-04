@@ -2,8 +2,8 @@ from datetime import datetime
 
 
 class Session:
-    def __init__(self, state: str, fiat: str, qty_users: int):
-        self.id = None
+    def __init__(self, id: int, state: str, fiat: str, qty_users: int):
+        self.id = id
         self.created_at = datetime.now()
         self.state = state
         self.fiat = fiat
@@ -23,9 +23,11 @@ class Session:
     @classmethod
     def from_dict(cls, data):
         session = cls(
-            state=data["state"], fiat=data["fiat"], qty_users=data["qty_users"]
+            id=data["id"],
+            state=data["state"],
+            fiat=data["fiat"],
+            qty_users=data["qty_users"],
         )
-        session.id = data.get("id")
         session.created_at = datetime.strptime(data["created_at"], "%Y-%m-%d %H:%M:%S")
         session.total_spent = data.get("total_spent", 0.0)
         return session
