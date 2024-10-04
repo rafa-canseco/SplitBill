@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import Optional
 
 from fastapi import HTTPException
 
@@ -99,25 +99,28 @@ def user_exists(user_id):
     return len(response.data) > 0
 
 
-def get_or_create_users(wallet_addresses: List[str]) -> List[int]:
-    user_ids = []
-    for wallet in wallet_addresses:
+def get_or_create_users(walletAddress: str) -> int:
+    try:
         user_response = (
-            supabase.table("users").select("id").eq("walletAddress", wallet).execute()
+            supabase.table("users")
+            .select("id")
+            .eq("walletAddress", walletAddress)
+            .execute()
         )
 
         if user_response.data:
-            user_ids.append(user_response.data[0]["id"])
+            return user_response.data[0]["id"]
         else:
-            new_user_response = (
-                supabase.table("users")
-                .insert({"walletAddress": wallet, "is_invited": True})
-                .execute()
-            )
+            new_user = {
+                "walletAddress": walletAddress,
+                "is_invited": True,
+                "is_profile_complete": False,
+            }
+            insert_response = supabase.table("users").insert(new_user).execute()
 
-            if new_user_response.data:
-                user_ids.append(new_user_response.data[0]["id"])
-            else:
-                raise Exception(f"Failed to create user for wallet: {wallet}")
+            if not insert_response.data:
+                raise ValueError("Failed to create new user")
 
-    return user_ids
+            return insert_response.data[0]["id"]
+    except Exception as e:
+        raise ValueError(f"Error in get_or_create_user: {str(e)}")

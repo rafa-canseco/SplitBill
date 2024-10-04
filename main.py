@@ -15,7 +15,6 @@ from .services.user_service import (
     check_user_by_privy_id,
     check_user_by_wallet,
     create_user,
-    get_or_create_users,
     get_user_by_privy_id,
     update_user,
 )
@@ -106,8 +105,7 @@ def create_session_endpoint(session_data: SessionCreate):
         fiat=session_data.fiat,
         qty_users=session_data.qty_users,
     )
-    user_ids = get_or_create_users(session_data.wallet_addresses)
-    created_session = create_session(new_session, user_ids)
+    created_session = create_session(new_session, session_data.participants)
 
     return SessionResponse(**created_session.to_dict())
 

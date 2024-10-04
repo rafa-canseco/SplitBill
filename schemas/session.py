@@ -4,11 +4,16 @@ from typing import List
 from pydantic import BaseModel
 
 
+class Participant(BaseModel):
+    walletAddress: str
+    joined: bool
+
+
 class SessionCreate(BaseModel):
     state: str
     fiat: str
     qty_users: int
-    wallet_addresses: List[str]
+    participants: List[Participant]
 
 
 class SessionResponse(BaseModel):

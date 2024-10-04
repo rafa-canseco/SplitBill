@@ -1,12 +1,15 @@
 from datetime import datetime
+from typing import List
 
 from postgrest.exceptions import APIError
 
 from ..database.supabase_client import supabase
 from ..models.session import Session
+from ..schemas.session import Participant
+from ..services.user_service import get_or_create_users
 
 
-def create_session(session: Session, user_ids: list):
+def create_session(session: Session, participants: List[Participant]):
     try:
         session_data = session.to_dict()
         del session_data["id"]
@@ -21,11 +24,12 @@ def create_session(session: Session, user_ids: list):
         session_users_data = [
             {
                 "session_id": session.id,
-                "user_id": user_id,
+                "user_id": get_or_create_users(participant.walletAddress),
                 "last_update": current_time,
                 "total_spent": 0,
+                "joined": participant.joined,
             }
-            for user_id in user_ids
+            for participant in participants
         ]
 
         session_users_response = (
@@ -61,7 +65,6 @@ def get_sessions_by_wallet_address(walletAddress: str):
             .eq("user_id", user_id)
             .execute()
         )
-        print(sessions.data)
         formatted_sessions = []
         for item in sessions.data:
             session_info = item["sessions"]
