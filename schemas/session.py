@@ -28,3 +28,7 @@ class SessionResponse(BaseModel):
 
 class JoinSessionRequest(BaseModel):
     walletAddress: str
+
+
+class ActivateSessionRequest(BaseModel):
+    walletAddress: str

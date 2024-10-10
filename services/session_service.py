@@ -133,3 +133,116 @@ def join_session(session_id: int, wallet_address: str):
         return updated.data[0]
     except Exception as e:
         raise Exception(f"Error joining session: {str(e)}")
+
+
+def activate_session(session_id: int, wallet_address: str):
+    try:
+        session = (
+            supabase.table("sessions")
+            .select("*")
+            .eq("id", session_id)
+            .single()
+            .execute()
+        )
+        if not session.data:
+            raise ValueError("Session not found")
+
+        if session.data["state"] == "Active":
+            return session.data
+
+        session_users = (
+            supabase.table("sessions_users")
+            .select("*,user:users(walletAddress)")
+            .eq("session_id", session_id)
+            .execute()
+        )
+
+        if not session_users.data:
+            raise ValueError("No participants found for this session")
+
+        user_in_session = any(
+            user["user"]["walletAddress"] == wallet_address
+            for user in session_users.data
+        )
+        if not user_in_session:
+            raise ValueError("User is not a participant in this session")
+
+        all_joined = all(user["joined"] for user in session_users.data)
+        if not all_joined:
+            raise ValueError("Not all participants have joined the session yet")
+
+        updated = (
+            supabase.table("sessions")
+            .update({"state": "Active"})
+            .eq("id", session_id)
+            .execute()
+        )
+
+        if not updated.data:
+            raise ValueError("Failed to activate session")
+
+        return updated.data[0]
+    except Exception as e:
+        raise Exception(f"Error activating session: {str(e)}")
+
+
+def get_session_details(session_id: int):
+    try:
+        session = (
+            supabase.table("sessions")
+            .select("*")
+            .eq("id", session_id)
+            .single()
+            .execute()
+        )
+        if not session.data:
+            raise ValueError("Session not found")
+
+        participants = (
+            supabase.table("sessions_users")
+            .select("user_id, joined, total_spent, users(id, name, walletAddress)")
+            .eq("session_id", session_id)
+            .execute()
+        )
+
+        expenses = (
+            supabase.table("expenses")
+            .select("id, user_id, amount, description, date")
+            .eq("session_id", session_id)
+            .execute()
+        )
+
+        formatted_participants = [
+            {
+                "id": p["users"]["id"],
+                "name": p["users"]["name"],
+                "walletAddress": p["users"]["walletAddress"],
+                "joined": p["joined"],
+                "total_spent": p["total_spent"],
+            }
+            for p in participants.data
+        ]
+
+        formatted_expenses = [
+            {
+                "id": e["id"],
+                "user_id": e["user_id"],
+                "amount": e["amount"],
+                "description": e["description"],
+                "date": (
+                    e["date"].isoformat()
+                    if isinstance(e["date"], datetime)
+                    else e["date"]
+                ),
+            }
+            for e in expenses.data
+        ]
+
+        return {
+            "session": session.data,
+            "participants": formatted_participants,
+            "expenses": formatted_expenses,
+        }
+
+    except Exception as e:
+        raise Exception(f"Error getting session details: {str(e)}")

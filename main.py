@@ -6,12 +6,19 @@ from fastapi.middleware.cors import CORSMiddleware
 from .models.expense import Expense
 from .models.session import Session
 from .schemas.expense import ExpenseCreate, ExpenseResponse
-from .schemas.session import JoinSessionRequest, SessionCreate, SessionResponse
+from .schemas.session import (
+    ActivateSessionRequest,
+    JoinSessionRequest,
+    SessionCreate,
+    SessionResponse,
+)
 from .schemas.user import UserCreate, UserResponse, UserUpdate
 from .services.expense_service import create_multiple_expenses
 from .services.session_balance_service import checkout_session
 from .services.session_service import (
+    activate_session,
     create_session,
+    get_session_details,
     get_sessions_by_wallet_address,
     join_session,
 )
@@ -115,7 +122,7 @@ def create_session_endpoint(session_data: SessionCreate):
     return SessionResponse(**created_session.to_dict())
 
 
-@app.post("/create_expense", response_model=List[ExpenseResponse])
+@app.post("/api/create_expense", response_model=List[ExpenseResponse])
 def create_expense_endpoint(expenses_data: ExpenseCreate):
     try:
         created_expenses = create_multiple_expenses(
@@ -156,3 +163,26 @@ def endpoint_sessions_by_wallet_address(walletAddress: str):
         raise HTTPException(status_code=404, detail=str(ve))
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/sessions/{session_id}/activate")
+async def activate_session_endpoint(
+    session_id: int, activation_request: ActivateSessionRequest
+):
+    try:
+        result = activate_session(session_id, activation_request.walletAddress)
+        return {"message": "Session activated successfully", "data": result}
+    except ValueError as ve:
+        raise HTTPException(status_code=400, detail=str(ve))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/fetch_sessions/{session_id}")
+def endpoint_session_details(session_id: int):
+    try:
+        session_details = get_session_details(session_id)
+        return session_details
+    except Exception as e:
+        print(f"Error in get_session_details_endpoint: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"An error occurred: {str(e)}")
